@@ -17,7 +17,7 @@ Due to GitHub's file size limitations, the dataset is hosted on Baidu Netdisk:
 ## Usage Instructions  
 
 - Download and extract the files to your local machine, then run them with the code.
-- 
+
 ## About Code
 
 - gee.js is the original script, and gee.md is the well-formatted display version.
