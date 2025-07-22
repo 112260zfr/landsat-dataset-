@@ -1,6 +1,6 @@
-//Ñ¡ÔñĞèÒª²Ã¼ôµÄÊ¸Á¿Êı¾İ 
+//é€‰æ‹©éœ€è¦è£å‰ªçš„çŸ¢é‡æ•°æ® 
 var cc = ee.FeatureCollection("projects/ee-935239274z/assets/ayakekumu");
-//È¥ÔÆº¯Êı 
+//å»äº‘å‡½æ•° 
 function maskL8sr(image) {
   var cloudShadowBitMask = (1 << 3);
   var cloudsBitMask = (1 << 5);
@@ -9,51 +9,51 @@ function maskL8sr(image) {
                  .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
   return image.updateMask(mask);
 }
-//Ñ¡ÔñÕ¤¸ñÊı¾İ¼¯ 
+//é€‰æ‹©æ …æ ¼æ•°æ®é›† 
 var cc2019 = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
                   .filterDate('2023-05-01', '2023-10-30')
                   .map(maskL8sr)
                   .median();
-//¶¨Òå¹âÆ×Ö¸Êı                  
-var mndwi = cc2019.normalizedDifference(['SR_B3', 'SR_B6']).rename('MNDWI');//¼ÆËãMNDWI
-var ndbi = cc2019.normalizedDifference(['SR_B6', 'SR_B5']).rename('NDBI');//¼ÆËãNDBI
-var ndvi = cc2019.normalizedDifference(['SR_B5', 'SR_B4']).rename('NDVI');//¼ÆËãNDVI
+//å®šä¹‰å…‰è°±æŒ‡æ•°                  
+var mndwi = cc2019.normalizedDifference(['SR_B3', 'SR_B6']).rename('MNDWI');//è®¡ç®—MNDWI
+var ndbi = cc2019.normalizedDifference(['SR_B6', 'SR_B5']).rename('NDBI');//è®¡ç®—NDBI
+var ndvi = cc2019.normalizedDifference(['SR_B5', 'SR_B4']).rename('NDVI');//è®¡ç®—NDVI
 cc2019=cc2019.addBands(ndvi).addBands(ndbi).addBands(mndwi)
-// Ê¹ÓÃÏÂÁĞ²¨¶Î×÷ÎªÌØÕ÷
+// ä½¿ç”¨ä¸‹åˆ—æ³¢æ®µä½œä¸ºç‰¹å¾
 var classNames = building.merge(water).merge(vegetation).merge(other);
 var bands = ['SR_B2', 'SR_B3', 'SR_B4', 'SR_B5', 'SR_B6', 'SR_B7','MNDWI','NDBI','NDVI'];
-// Í¨¹ıÒªËØ¼¯ÔÚLandsat-8ÖĞÑ¡È¡Ñù±¾£¬°ÑlandcoverÊôĞÔ¸³ÓèÑù±¾
+// é€šè¿‡è¦ç´ é›†åœ¨Landsat-8ä¸­é€‰å–æ ·æœ¬ï¼ŒæŠŠlandcoverå±æ€§èµ‹äºˆæ ·æœ¬
 var training = cc2019.select(bands).sampleRegions({
   collection: classNames,
   properties: ['landcover'],
   scale: 30
 })
-//¾«¶ÈÆÀ¼Û 
-var withRandom = training.randomColumn('random');//Ñù±¾µãËæ»úµÄÅÅÁĞ
-// ±£ÁôÒ»Ğ©Êı¾İ½øĞĞ²âÊÔ£¬ÒÔ±ÜÃâÄ£ĞÍ¹ı¶ÈÄâºÏ¡£
+//ç²¾åº¦è¯„ä»· 
+var withRandom = training.randomColumn('random');//æ ·æœ¬ç‚¹éšæœºçš„æ’åˆ—
+// ä¿ç•™ä¸€äº›æ•°æ®è¿›è¡Œæµ‹è¯•ï¼Œä»¥é¿å…æ¨¡å‹è¿‡åº¦æ‹Ÿåˆã€‚
 var split = 0.7; 
-var trainingPartition = withRandom.filter(ee.Filter.lt('random', split));//É¸Ñ¡70%µÄÑù±¾×÷ÎªÑµÁ·Ñù±¾
-var testingPartition = withRandom.filter(ee.Filter.gte('random', split));//É¸Ñ¡30%µÄÑù±¾×÷Îª²âÊÔÑù±¾
-//·ÖÀà·½·¨Ñ¡ÔñsmileCart() randomForest() 
+var trainingPartition = withRandom.filter(ee.Filter.lt('random', split));//ç­›é€‰70%çš„æ ·æœ¬ä½œä¸ºè®­ç»ƒæ ·æœ¬
+var testingPartition = withRandom.filter(ee.Filter.gte('random', split));//ç­›é€‰30%çš„æ ·æœ¬ä½œä¸ºæµ‹è¯•æ ·æœ¬
+//åˆ†ç±»æ–¹æ³•é€‰æ‹©smileCart() randomForest() 
 var classifier = ee.Classifier.smileRandomForest(100).train({
   features: trainingPartition,
   classProperty: 'landcover',
   inputProperties: bands
 });
-//¶ÔLandsat-8½øĞĞ·ÖÀà
+//å¯¹Landsat-8è¿›è¡Œåˆ†ç±»
 var class_img = cc2019.select(bands).classify(classifier);
-//ÔËÓÃ²âÊÔÑù±¾·ÖÀà£¬È·¶¨Òª½øĞĞº¯ÊıÔËËãµÄÊı¾İ¼¯ÒÔ¼°º¯Êı
+//è¿ç”¨æµ‹è¯•æ ·æœ¬åˆ†ç±»ï¼Œç¡®å®šè¦è¿›è¡Œå‡½æ•°è¿ç®—çš„æ•°æ®é›†ä»¥åŠå‡½æ•°
 var test = testingPartition.classify(classifier);
-//¼ÆËã»ìÏı¾ØÕó
+//è®¡ç®—æ··æ·†çŸ©é˜µ
 var confusionMatrix = test.errorMatrix('landcover', 'classification');
-print('confusionMatrix',confusionMatrix);//Ãæ°åÉÏÏÔÊ¾»ìÏı¾ØÕó
-print('overall accuracy', confusionMatrix.accuracy());//Ãæ°åÉÏÏÔÊ¾×ÜÌå¾«¶È
-print('kappa accuracy', confusionMatrix.kappa());//Ãæ°åÉÏÏÔÊ¾kappaÖµ
+print('confusionMatrix',confusionMatrix);//é¢æ¿ä¸Šæ˜¾ç¤ºæ··æ·†çŸ©é˜µ
+print('overall accuracy', confusionMatrix.accuracy());//é¢æ¿ä¸Šæ˜¾ç¤ºæ€»ä½“ç²¾åº¦
+print('kappa accuracy', confusionMatrix.kappa());//é¢æ¿ä¸Šæ˜¾ç¤ºkappaå€¼
 
 Map.centerObject(cc)
 Map.addLayer(cc);
 Map.addLayer(class_img.clip(cc), {min: 1, max: 4, palette: ['orange', 'blue', 'green','yellow']});
-//ÏÂÔØ´¦ÀíºÃµÄÓ°Ïñ
+//ä¸‹è½½å¤„ç†å¥½çš„å½±åƒ
 Export.image.toCloudStorage({
  image:class_img.clip(cc),
  description: 'Landsat2019',
